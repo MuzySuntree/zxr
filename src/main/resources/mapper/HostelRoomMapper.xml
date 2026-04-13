@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youngman.hostel.mapper.HostelRoomMapper">
+
+    <resultMap id="RoomOccupancyGenderResultMap" type="com.youngman.hostel.vo.RoomOccupancyGenderVO">
+        <result property="roomId" column="room_id"/>
+        <result property="roomNo" column="room_no"/>
+        <result property="roomName" column="room_name"/>
+        <result property="occupiedCount" column="occupied_count"/>
+        <result property="maleCount" column="male_count"/>
+        <result property="femaleCount" column="female_count"/>
+    </resultMap>
+
+    <!-- 统计指定房间在目标入住区间内的入住人数与男女数量 -->
+    <select id="selectRoomOccupancyGender" resultMap="RoomOccupancyGenderResultMap">
+        SELECT
+            r.id AS room_id,
+            r.room_no,
+            r.room_name,
+            COUNT(bo.id) AS occupied_count,
+            COALESCE(SUM(CASE WHEN u.gender = 1 THEN 1 ELSE 0 END), 0) AS male_count,
+            COALESCE(SUM(CASE WHEN u.gender = 2 THEN 1 ELSE 0 END), 0) AS female_count
+        FROM hostel_room r
+        LEFT JOIN booking_order bo
+               ON bo.room_id = r.id
+              AND bo.deleted = 0
+              AND bo.order_status IN (2, 3, 4)
+              AND bo.check_in_date &lt; #{checkOutDate}
+              AND #{checkInDate} &lt; bo.check_out_date
+        LEFT JOIN sys_user u ON u.id = bo.user_id AND u.deleted = 0
+        WHERE r.deleted = 0
+          AND r.id = #{roomId}
+        GROUP BY r.id, r.room_no, r.room_name
+    </select>
+
+</mapper>

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youngman.hostel.mapper.BookingOrderMapper">
+
+    <resultMap id="BookingOrderDetailResultMap" type="com.youngman.hostel.vo.BookingOrderDetailVO">
+        <result property="orderId" column="order_id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="roomId" column="room_id"/>
+        <result property="roomNo" column="room_no"/>
+        <result property="bedId" column="bed_id"/>
+        <result property="bedNo" column="bed_no"/>
+        <result property="checkInDate" column="check_in_date"/>
+        <result property="checkOutDate" column="check_out_date"/>
+        <result property="orderStatus" column="order_status"/>
+        <result property="amount" column="amount"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="assignTime" column="assign_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <!-- 根据订单ID查询订单详情 -->
+    <select id="selectOrderDetailById" resultMap="BookingOrderDetailResultMap">
+        SELECT
+            bo.id AS order_id,
+            bo.order_no,
+            bo.user_id,
+            su.username,
+            bo.room_id,
+            hr.room_no,
+            bo.bed_id,
+            hb.bed_no,
+            bo.check_in_date,
+            bo.check_out_date,
+            bo.order_status,
+            bo.amount,
+            bo.pay_time,
+            bo.assign_time,
+            bo.remark
+        FROM booking_order bo
+        LEFT JOIN sys_user su ON su.id = bo.user_id AND su.deleted = 0
+        LEFT JOIN hostel_room hr ON hr.id = bo.room_id AND hr.deleted = 0
+        LEFT JOIN hostel_bed hb ON hb.id = bo.bed_id AND hb.deleted = 0
+        WHERE bo.deleted = 0
+          AND bo.id = #{orderId}
+        LIMIT 1
+    </select>
+
+    <!-- 根据订单号查询订单详情 -->
+    <select id="selectOrderDetailByOrderNo" resultMap="BookingOrderDetailResultMap">
+        SELECT
+            bo.id AS order_id,
+            bo.order_no,
+            bo.user_id,
+            su.username,
+            bo.room_id,
+            hr.room_no,
+            bo.bed_id,
+            hb.bed_no,
+            bo.check_in_date,
+            bo.check_out_date,
+            bo.order_status,
+            bo.amount,
+            bo.pay_time,
+            bo.assign_time,
+            bo.remark
+        FROM booking_order bo
+        LEFT JOIN sys_user su ON su.id = bo.user_id AND su.deleted = 0
+        LEFT JOIN hostel_room hr ON hr.id = bo.room_id AND hr.deleted = 0
+        LEFT JOIN hostel_bed hb ON hb.id = bo.bed_id AND hb.deleted = 0
+        WHERE bo.deleted = 0
+          AND bo.order_no = #{orderNo}
+        LIMIT 1
+    </select>
+
+</mapper>
