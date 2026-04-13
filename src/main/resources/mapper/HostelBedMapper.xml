@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.youngman.hostel.mapper.HostelBedMapper">
+
+    <resultMap id="HostelBedAvailableResultMap" type="com.youngman.hostel.vo.HostelBedAvailableVO">
+        <result property="bedId" column="bed_id"/>
+        <result property="bedNo" column="bed_no"/>
+        <result property="roomId" column="room_id"/>
+        <result property="roomNo" column="room_no"/>
+        <result property="roomName" column="room_name"/>
+        <result property="roomType" column="room_type"/>
+        <result property="genderType" column="gender_type"/>
+        <result property="price" column="price"/>
+    </resultMap>
+
+    <!-- 查询指定时间段内所有可用床位 -->
+    <select id="selectAvailableBeds" resultMap="HostelBedAvailableResultMap">
+        SELECT
+            b.id AS bed_id,
+            b.bed_no,
+            r.id AS room_id,
+            r.room_no,
+            r.room_name,
+            r.room_type,
+            r.gender_type,
+            r.price
+        FROM hostel_bed b
+        INNER JOIN hostel_room r ON r.id = b.room_id
+        WHERE b.deleted = 0
+          AND b.status = 1
+          AND r.deleted = 0
+          AND r.status = 1
+          AND NOT EXISTS (
+              SELECT 1
+              FROM booking_order bo
+              WHERE bo.deleted = 0
+                AND bo.bed_id = b.id
+                AND bo.order_status IN (2, 3, 4)
+                AND bo.check_in_date &lt; #{checkOutDate}
+                AND #{checkInDate} &lt; bo.check_out_date
+          )
+        ORDER BY r.price ASC, r.id ASC, b.sort_no ASC, b.id ASC
+    </select>
+
+    <!-- 按用户性别过滤后查询可用床位：1-男可住男/混合，2-女可住女/混合 -->
+    <select id="selectAvailableBedsByUserGender" resultMap="HostelBedAvailableResultMap">
+        SELECT
+            b.id AS bed_id,
+            b.bed_no,
+            r.id AS room_id,
+            r.room_no,
+            r.room_name,
+            r.room_type,
+            r.gender_type,
+            r.price
+        FROM hostel_bed b
+        INNER JOIN hostel_room r ON r.id = b.room_id
+        WHERE b.deleted = 0
+          AND b.status = 1
+          AND r.deleted = 0
+          AND r.status = 1
+          AND (
+            (#{userGender} = 1 AND r.gender_type IN (1, 3))
+            OR (#{userGender} = 2 AND r.gender_type IN (2, 3))
+          )
+          AND NOT EXISTS (
+              SELECT 1
+              FROM booking_order bo
+              WHERE bo.deleted = 0
+                AND bo.bed_id = b.id
+                AND bo.order_status IN (2, 3, 4)
+                AND bo.check_in_date &lt; #{checkOutDate}
+                AND #{checkInDate} &lt; bo.check_out_date
+          )
+        ORDER BY r.price ASC, r.id ASC, b.sort_no ASC, b.id ASC
+    </select>
+
+    <!-- 查询指定房间在目标时间段内可用床位 -->
+    <select id="selectAvailableBedsByRoomId" resultMap="HostelBedAvailableResultMap">
+        SELECT
+            b.id AS bed_id,
+            b.bed_no,
+            r.id AS room_id,
+            r.room_no,
+            r.room_name,
+            r.room_type,
+            r.gender_type,
+            r.price
+        FROM hostel_bed b
+        INNER JOIN hostel_room r ON r.id = b.room_id
+        WHERE b.deleted = 0
+          AND b.status = 1
+          AND r.deleted = 0
+          AND r.status = 1
+          AND r.id = #{roomId}
+          AND NOT EXISTS (
+              SELECT 1
+              FROM booking_order bo
+              WHERE bo.deleted = 0
+                AND bo.bed_id = b.id
+                AND bo.order_status IN (2, 3, 4)
+                AND bo.check_in_date &lt; #{checkOutDate}
+                AND #{checkInDate} &lt; bo.check_out_date
+          )
+        ORDER BY b.sort_no ASC, b.id ASC
+    </select>
+
+</mapper>
