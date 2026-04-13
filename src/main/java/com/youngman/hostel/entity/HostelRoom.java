@@ -41,6 +41,9 @@ public class HostelRoom {
     /** 状态：1-可用，0-停用 */
     private Integer status;
 
+    /** 房间图片URL */
+    private String roomImage;
+
     /** 描述 */
     private String description;
 

@@ -51,6 +51,7 @@ CREATE TABLE `room` (
   `price` DECIMAL(10,2) NOT NULL COMMENT '床位单价（每晚）',
   `max_bed_count` INT NOT NULL COMMENT '最大床位数（冗余字段，便于展示和校验）',
   `status` TINYINT NOT NULL DEFAULT 1 COMMENT '房间状态：1-可用，0-停用',
+  `room_image` VARCHAR(500) DEFAULT NULL COMMENT '房间图片URL',
   `description` VARCHAR(500) DEFAULT NULL COMMENT '房间描述',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',

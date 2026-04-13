@@ -7,9 +7,16 @@ import com.youngman.hostel.vo.RoomOccupancyGenderVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 房间接口
@@ -68,6 +75,27 @@ public class HostelRoomController {
             return ApiResponse.success(hostelRoomService.deleteRoom(roomId));
         } catch (Exception e) {
             return ApiResponse.fail(e.getMessage());
+        }
+    }
+
+    /** 房间图片上传 */
+    @PostMapping("/upload-image")
+    public ApiResponse<String> uploadRoomImage(@RequestParam("file") MultipartFile file) {
+        try {
+            if (file == null || file.isEmpty()) {
+                return ApiResponse.fail("请选择图片文件");
+            }
+            String original = file.getOriginalFilename();
+            String ext = original != null && original.contains(".") ? original.substring(original.lastIndexOf('.')) : ".jpg";
+            String filename = UUID.randomUUID().toString().replace("-", "") + ext;
+
+            Path uploadDir = Paths.get("uploads", "room-images");
+            Files.createDirectories(uploadDir);
+            Files.copy(file.getInputStream(), uploadDir.resolve(filename), StandardCopyOption.REPLACE_EXISTING);
+
+            return ApiResponse.success("http://127.0.0.1:8080/uploads/room-images/" + filename);
+        } catch (IOException e) {
+            return ApiResponse.fail("上传失败: " + e.getMessage());
         }
     }
 
