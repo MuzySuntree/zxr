@@ -12,12 +12,12 @@
       <el-table-column prop="orderNo" label="订单号" min-width="220" />
       <el-table-column prop="checkInDate" label="入住日期" />
       <el-table-column prop="checkOutDate" label="退房日期" />
-      <el-table-column prop="orderStatus" label="状态" />
+<!--      <el-table-column prop="orderStatus" label="状态" />-->
       <el-table-column prop="roomNo" label="房间号" />
       <el-table-column prop="bedNo" label="床位号" />
       <el-table-column label="操作" width="300" fixed="right">
         <template #default="scope">
-          <el-button size="small" type="success" @click="onPay(scope.row.orderId)">支付</el-button>
+<!--          <el-button size="small" type="success" @click="onPay(scope.row.orderId)">支付</el-button>-->
           <el-button size="small" type="primary" @click="onAllocate(scope.row.orderId)">分配床位</el-button>
           <el-button size="small" @click="onViewAllocation(scope.row.orderId)">查看分配</el-button>
         </template>
