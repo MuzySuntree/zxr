@@ -1,11 +1,5 @@
 <template>
   <div class="dashboard-page">
-    <el-row :gutter="16" class="summary-row">
-      <el-col :span="8"><el-card class="summary-card"><h3>当前有空闲床位的房间</h3><p class="num">{{ summary.roomWithFreeBeds }}</p></el-card></el-col>
-      <el-col :span="8"><el-card class="summary-card"><h3>住户总数</h3><p class="num">{{ summary.userCount }}</p></el-card></el-col>
-      <el-col :span="8"><el-card class="summary-card"><h3>一周收入（元）</h3><p class="num">{{ summary.weekRevenue.toFixed(2) }}</p></el-card></el-col>
-    </el-row>
-
     <el-row :gutter="16">
       <el-col :span="12"><el-card class="chart-card"><template #header>订单状态分布</template><div ref="orderStatusChartRef" class="chart" /></el-card></el-col>
       <el-col :span="12"><el-card class="chart-card"><template #header>近7日收入趋势</template><div ref="revenueTrendChartRef" class="chart" /></el-card></el-col>
@@ -17,14 +11,11 @@
 
 <script setup lang="ts">
 import * as echarts from 'echarts'
-import { nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { listBeds } from '../../api/bed'
 import { listOrders } from '../../api/order'
 import { listRooms } from '../../api/room'
-import { listUsers } from '../../api/user'
-
-const summary = reactive({ roomWithFreeBeds: 0, userCount: 0, weekRevenue: 0 })
 
 const orderStatusChartRef = ref<HTMLElement | null>(null)
 const revenueTrendChartRef = ref<HTMLElement | null>(null)
@@ -50,19 +41,15 @@ const formatDate = (date: Date) => {
 
 const loadDashboardData = async () => {
   try {
-    const [roomRes, bedRes, userRes, orderRes] = await Promise.all([listRooms(), listBeds(), listUsers(), listOrders()])
+    const [roomRes, bedRes, orderRes] = await Promise.all([listRooms(), listBeds(), listOrders()])
     const rooms = roomRes.data || []
     const beds = bedRes.data || []
-    const users = (userRes.data || []).filter((u: any) => u.role !== 1)
     const orders = orderRes.data || []
 
     const activeOrderStatuses = [2, 3, 4]
     const paidStatuses = [2, 3, 4, 5]
 
     const occupiedBedIds = new Set(orders.filter((o: any) => activeOrderStatuses.includes(o.orderStatus) && o.bedId).map((o: any) => o.bedId))
-    const freeRoomIds = new Set(beds.filter((b: any) => b.status === 1 && !occupiedBedIds.has(b.id)).map((b: any) => b.roomId))
-    summary.roomWithFreeBeds = rooms.filter((r: any) => freeRoomIds.has(r.id)).length
-    summary.userCount = users.length
 
     const today = new Date(); const weekLabels: string[] = []; const revenueMap: Record<string, number> = {}
     for (let i = 6; i >= 0; i--) { const d = new Date(today); d.setDate(today.getDate() - i); const key = formatDate(d); weekLabels.push(key); revenueMap[key] = 0 }
@@ -73,7 +60,6 @@ const loadDashboardData = async () => {
       if (dateKey in revenueMap) revenueMap[dateKey] += Number(o.amount ?? o.totalAmount ?? 0)
     }
     const weekRevenueData = weekLabels.map((d) => Number(revenueMap[d].toFixed(2)))
-    summary.weekRevenue = weekRevenueData.reduce((a, b) => a + b, 0)
 
     const orderStatusCount: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
     orders.forEach((o: any) => { if (orderStatusCount[o.orderStatus] !== undefined) orderStatusCount[o.orderStatus]++ })
@@ -123,9 +109,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .dashboard-page { padding: 4px; }
-.summary-row { margin-bottom: 16px; }
-.summary-card { height: 120px; display: flex; flex-direction: column; justify-content: center; }
-.num { font-size: 30px; color: #409eff; margin: 8px 0 0; font-weight: 700; }
-.chart-card { margin-bottom: 16px; }
-.chart { height: 320px; }
+.chart-card { margin-bottom: 16px; height: 360px; overflow: visible; }
+.chart { height: 300px; }
+:deep(.el-card__body) { overflow: visible; }
 </style>
