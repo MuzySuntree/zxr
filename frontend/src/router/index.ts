@@ -23,6 +23,7 @@ const routes: RouteRecordRaw[] = [
       { path: '', redirect: '/user/home' },
       { path: 'home', component: () => import('../views/user/UserHomeView.vue') },
       { path: 'booking', component: () => import('../views/user/UserBookingView.vue') },
+      { path: 'activity', component: () => import('../views/user/UserActivityView.vue') },
       { path: 'order', component: () => import('../views/user/UserOrderView.vue') },
       { path: 'notice', component: () => import('../views/user/UserNoticeView.vue') },
       { path: 'profile', component: () => import('../views/user/UserProfileView.vue') }
