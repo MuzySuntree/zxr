@@ -26,6 +26,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'activity', component: () => import('../views/user/UserActivityView.vue') },
       { path: 'order', component: () => import('../views/user/UserOrderView.vue') },
       { path: 'notice', component: () => import('../views/user/UserNoticeView.vue') },
+      { path: 'message', component: () => import('../views/user/UserMessageBoardView.vue') },
       { path: 'profile', component: () => import('../views/user/UserProfileView.vue') }
     ]
   }

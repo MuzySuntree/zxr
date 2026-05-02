@@ -8,6 +8,7 @@
         <el-menu-item index="/user/activity">活动</el-menu-item>
         <el-menu-item index="/user/order">我的订单</el-menu-item>
         <el-menu-item index="/user/notice">订房通知</el-menu-item>
+        <el-menu-item index="/user/message">留言板</el-menu-item>
         <el-menu-item index="/user/profile">个人信息</el-menu-item>
       </el-menu>
       <div class="right">
