@@ -30,6 +30,8 @@ public interface BookingOrderService {
 
     PaymentResultVO simulatePay(Long orderId);
 
+    PaymentResultVO simulatePay(Long orderId, Integer payType);
+
     AllocationNoticeVO allocateBedAfterPayment(Long orderId);
 
     AllocationNoticeVO getAllocationResult(Long orderId);

@@ -95,9 +95,10 @@ public class BookingOrderController {
      * 说明：当前 serviceImpl 中 simulatePay 已内含“支付后自动分配床位”的流程触发。
      */
     @PostMapping("/pay/{orderId}")
-    public ApiResponse<PaymentResultVO> simulatePay(@PathVariable Long orderId) {
+    public ApiResponse<PaymentResultVO> simulatePay(@PathVariable Long orderId,
+                                                  @RequestParam(required = false) Integer payType) {
         try {
-            return ApiResponse.success(bookingOrderService.simulatePay(orderId));
+            return ApiResponse.success(bookingOrderService.simulatePay(orderId, payType));
         } catch (Exception e) {
             return ApiResponse.fail(e.getMessage());
         }

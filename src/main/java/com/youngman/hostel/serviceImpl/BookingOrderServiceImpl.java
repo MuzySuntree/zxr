@@ -6,12 +6,14 @@ import com.youngman.hostel.dto.CreateBookingOrderDTO;
 import com.youngman.hostel.entity.BookingNotice;
 import com.youngman.hostel.entity.BookingOrder;
 import com.youngman.hostel.entity.SysUser;
+import com.youngman.hostel.entity.UserPaymentSetting;
 import com.youngman.hostel.mapper.BookingOrderMapper;
 import com.youngman.hostel.mapper.SysUserMapper;
 import com.youngman.hostel.service.BedAllocationService;
 import com.youngman.hostel.service.BookingNoticeService;
 import com.youngman.hostel.service.BookingOrderService;
 import com.youngman.hostel.service.HostelBedService;
+import com.youngman.hostel.service.UserPaymentSettingService;
 import com.youngman.hostel.vo.AllocationNoticeVO;
 import com.youngman.hostel.vo.BookingOrderDetailVO;
 import com.youngman.hostel.vo.HostelBedAvailableVO;
@@ -43,6 +45,7 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     private final HostelBedService hostelBedService;
     private final BedAllocationService bedAllocationService;
     private final BookingNoticeService bookingNoticeService;
+    private final UserPaymentSettingService userPaymentSettingService;
 
     @Override
     public Long createOrder(CreateBookingOrderDTO dto) {
@@ -52,24 +55,13 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long createPendingOrder(CreateBookingOrderDTO dto) {
-        if (dto == null) {
-            throw new IllegalArgumentException("创建订单参数不能为空");
-        }
-        if (dto.getUserId() == null) {
-            throw new IllegalArgumentException("userId不能为空");
-        }
+        if (dto == null) throw new IllegalArgumentException("创建订单参数不能为空");
+        if (dto.getUserId() == null) throw new IllegalArgumentException("userId不能为空");
         validateDateRange(dto.getCheckInDate(), dto.getCheckOutDate());
 
         SysUser user = getValidUser(dto.getUserId());
-
-        List<HostelBedAvailableVO> beds = hostelBedService.getAvailableBedsByUserGender(
-                dto.getCheckInDate(), dto.getCheckOutDate(), user.getGender());
-
-        if (beds == null || beds.isEmpty()) {
-            throw new RuntimeException("当前入住时间暂无符合性别要求的可用床位");
-        }
-
-        BigDecimal amount = beds.get(0).getPrice() == null ? BigDecimal.ZERO : beds.get(0).getPrice();
+        List<HostelBedAvailableVO> beds = hostelBedService.getAvailableBedsByUserGender(dto.getCheckInDate(), dto.getCheckOutDate(), user.getGender());
+        if (beds == null || beds.isEmpty()) throw new RuntimeException("当前入住时间暂无符合性别要求的可用床位");
 
         BookingOrder order = new BookingOrder();
         order.setOrderNo(generateOrderNo());
@@ -77,35 +69,38 @@ public class BookingOrderServiceImpl implements BookingOrderService {
         order.setCheckInDate(dto.getCheckInDate());
         order.setCheckOutDate(dto.getCheckOutDate());
         order.setOrderStatus(ORDER_STATUS_PENDING_PAY);
-        order.setAmount(amount);
+        order.setAmount(beds.get(0).getPrice() == null ? BigDecimal.ZERO : beds.get(0).getPrice());
         order.setRemark(dto.getRemark());
         order.setCreateTime(LocalDateTime.now());
         order.setUpdateTime(LocalDateTime.now());
         order.setDeleted(0);
 
         int rows = bookingOrderMapper.insert(order);
-        if (rows <= 0 || order.getId() == null) {
-            throw new RuntimeException("创建待支付订单失败");
-        }
+        if (rows <= 0 || order.getId() == null) throw new RuntimeException("创建待支付订单失败");
         return order.getId();
     }
 
     @Override
-    public BookingOrderDetailVO getOrderDetailById(Long orderId) { if (orderId == null) throw new IllegalArgumentException("orderId不能为空");
+    public BookingOrderDetailVO getOrderDetailById(Long orderId) {
+        if (orderId == null) throw new IllegalArgumentException("orderId不能为空");
         BookingOrderDetailVO detail = bookingOrderMapper.selectOrderDetailById(orderId);
         if (detail == null) throw new RuntimeException("订单不存在, orderId=" + orderId);
-        return detail; }
+        return detail;
+    }
 
     @Override
-    public BookingOrderDetailVO getOrderDetailByOrderNo(String orderNo) { if (orderNo == null || orderNo.trim().isEmpty()) throw new IllegalArgumentException("orderNo不能为空");
+    public BookingOrderDetailVO getOrderDetailByOrderNo(String orderNo) {
+        if (orderNo == null || orderNo.trim().isEmpty()) throw new IllegalArgumentException("orderNo不能为空");
         BookingOrderDetailVO detail = bookingOrderMapper.selectOrderDetailByOrderNo(orderNo);
         if (detail == null) throw new RuntimeException("订单不存在, orderNo=" + orderNo);
-        return detail; }
+        return detail;
+    }
 
     @Override
     public List<BookingOrderDetailVO> listOrders() {
         List<BookingOrder> orders = bookingOrderMapper.selectList(new LambdaQueryWrapper<BookingOrder>()
-                .eq(BookingOrder::getDeleted, 0).orderByDesc(BookingOrder::getId));
+                .eq(BookingOrder::getDeleted, 0)
+                .orderByDesc(BookingOrder::getId));
         return orders.stream().map(BookingOrder::getId).map(bookingOrderMapper::selectOrderDetailById).collect(Collectors.toList());
     }
 
@@ -122,8 +117,10 @@ public class BookingOrderServiceImpl implements BookingOrderService {
                 || Integer.valueOf(ORDER_STATUS_ALLOCATED).equals(status))) {
             throw new RuntimeException("当前状态不允许取消订单");
         }
+
         return bookingOrderMapper.update(null, new LambdaUpdateWrapper<BookingOrder>()
-                .eq(BookingOrder::getId, orderId).eq(BookingOrder::getDeleted, 0)
+                .eq(BookingOrder::getId, orderId)
+                .eq(BookingOrder::getDeleted, 0)
                 .set(BookingOrder::getOrderStatus, ORDER_STATUS_CANCELED)
                 .set(BookingOrder::getUpdateTime, LocalDateTime.now())) > 0;
     }
@@ -132,7 +129,8 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     public boolean deleteOrder(Long orderId) {
         getOrderEntity(orderId);
         return bookingOrderMapper.update(null, new LambdaUpdateWrapper<BookingOrder>()
-                .eq(BookingOrder::getId, orderId).eq(BookingOrder::getDeleted, 0)
+                .eq(BookingOrder::getId, orderId)
+                .eq(BookingOrder::getDeleted, 0)
                 .set(BookingOrder::getDeleted, 1)
                 .set(BookingOrder::getUpdateTime, LocalDateTime.now())) > 0;
     }
@@ -155,8 +153,23 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public PaymentResultVO simulatePay(Long orderId) {
+        return simulatePay(orderId, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentResultVO simulatePay(Long orderId, Integer payType) {
         BookingOrder order = getOrderEntity(orderId);
-        if (!Integer.valueOf(ORDER_STATUS_PENDING_PAY).equals(order.getOrderStatus())) throw new RuntimeException("只有待支付订单才能执行支付");
+        if (!Integer.valueOf(ORDER_STATUS_PENDING_PAY).equals(order.getOrderStatus())) {
+            throw new RuntimeException("只有待支付订单才能执行支付");
+        }
+
+        Integer finalPayType = resolvePayType(order.getUserId(), payType);
+        if (finalPayType == 1) {
+            UserPaymentSetting balanceSetting = userPaymentSettingService.getEnabledByUserIdAndPayType(order.getUserId(), 1);
+            if (balanceSetting == null) throw new RuntimeException("未找到可用的余额支付方式");
+            userPaymentSettingService.deductBalance(balanceSetting.getId(), order.getAmount());
+        }
 
         order.setOrderStatus(ORDER_STATUS_PAID);
         order.setPayTime(LocalDateTime.now());
@@ -166,7 +179,13 @@ public class BookingOrderServiceImpl implements BookingOrderService {
         allocateBedAfterPayment(orderId);
 
         PaymentResultVO vo = new PaymentResultVO();
-        vo.setOrderId(order.getId()); vo.setOrderNo(order.getOrderNo()); vo.setOrderStatus(ORDER_STATUS_PAID); vo.setPayTime(order.getPayTime());
+        vo.setOrderId(order.getId());
+        vo.setOrderNo(order.getOrderNo());
+        vo.setOrderStatus(ORDER_STATUS_PAID);
+        vo.setPayTime(order.getPayTime());
+        vo.setPayType(finalPayType);
+        vo.setPayTypeName(getPayTypeName(finalPayType));
+        vo.setPaidAmount(order.getAmount());
         vo.setMessage("支付成功，系统已触发自动分配床位流程");
         return vo;
     }
@@ -175,10 +194,11 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     @Transactional(rollbackFor = Exception.class)
     public AllocationNoticeVO allocateBedAfterPayment(Long orderId) {
         BookingOrder order = getOrderEntity(orderId);
-        if (!Integer.valueOf(ORDER_STATUS_PAID).equals(order.getOrderStatus())) throw new RuntimeException("只有已支付订单才允许分配床位");
+        if (!Integer.valueOf(ORDER_STATUS_PAID).equals(order.getOrderStatus())) {
+            throw new RuntimeException("只有已支付订单才允许分配床位");
+        }
 
         AllocationNoticeVO allocation = bedAllocationService.allocateBedForOrder(orderId);
-
         BookingNotice notice = new BookingNotice();
         notice.setUserId(order.getUserId());
         notice.setOrderId(order.getId());
@@ -204,16 +224,12 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     }
 
     private SysUser getValidUser(Long userId) {
-        if (userId == null) {
-            throw new IllegalArgumentException("userId不能为空");
-        }
+        if (userId == null) throw new IllegalArgumentException("userId不能为空");
         SysUser user = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getId, userId)
                 .eq(SysUser::getDeleted, 0)
                 .last("limit 1"));
-        if (user == null) {
-            throw new RuntimeException("用户不存在, userId=" + userId);
-        }
+        if (user == null) throw new RuntimeException("用户不存在, userId=" + userId);
         if (user.getGender() == null || (user.getGender() != 1 && user.getGender() != 2)) {
             throw new RuntimeException("用户性别信息无效，无法创建订单");
         }
@@ -226,12 +242,36 @@ public class BookingOrderServiceImpl implements BookingOrderService {
     }
 
     private String generateOrderNo() {
-        return "BO" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")) + ThreadLocalRandom.current().nextInt(100, 1000);
+        return "BO" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"))
+                + ThreadLocalRandom.current().nextInt(100, 1000);
+    }
+
+    private Integer resolvePayType(Long userId, Integer payType) {
+        if (payType != null) {
+            if (payType != 1 && payType != 2 && payType != 3) {
+                throw new IllegalArgumentException("payType仅支持1-余额、2-微信、3-支付宝");
+            }
+            return payType;
+        }
+        UserPaymentSetting defaultSetting = userPaymentSettingService.getDefaultByUserId(userId);
+        return defaultSetting == null ? 2 : defaultSetting.getPayType();
+    }
+
+    private String getPayTypeName(Integer payType) {
+        if (payType == null) return "未知";
+        if (payType == 1) return "余额模拟支付";
+        if (payType == 2) return "微信模拟支付";
+        if (payType == 3) return "支付宝模拟支付";
+        return "未知";
     }
 
     private String buildNoticeContent(AllocationNoticeVO vo) {
-        return String.format("您的订单已成功分配至%s房间 %s床位。当前该房间已有%d人入住，其中男%d人，女%d人。",
-                vo.getRoomNo(), vo.getBedNo(), vo.getOccupiedCount() == null ? 0 : vo.getOccupiedCount(),
-                vo.getMaleCount() == null ? 0 : vo.getMaleCount(), vo.getFemaleCount() == null ? 0 : vo.getFemaleCount());
+        return String.format(
+                "您的订单已成功分配至%s房间 %s床位。当前该房间已有%d人入住，其中男%d人，女%d人。",
+                vo.getRoomNo(), vo.getBedNo(),
+                vo.getOccupiedCount() == null ? 0 : vo.getOccupiedCount(),
+                vo.getMaleCount() == null ? 0 : vo.getMaleCount(),
+                vo.getFemaleCount() == null ? 0 : vo.getFemaleCount()
+        );
     }
 }
