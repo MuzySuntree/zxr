@@ -35,7 +35,7 @@
             <el-button size="small" type="warning" @click="onCancel(scope.row.orderId)">取消</el-button>
           </template>
           <el-tag v-else-if="scope.row.orderStatus === 2" type="primary">等待分配</el-tag>
-          <el-tag v-else-if="scope.row.orderStatus === 3" type="success">查看分配</el-tag>
+          <el-button v-else-if="scope.row.orderStatus === 3" size="small" type="primary" @click="onViewAllocation(scope.row)">查看分配</el-button>
           <el-tag v-else-if="scope.row.orderStatus === 4" type="success">入住中</el-tag>
           <el-tag v-else-if="scope.row.orderStatus === 5" type="info">已完成</el-tag>
           <el-tag v-else-if="scope.row.orderStatus === 6" type="danger">已取消</el-tag>
@@ -100,6 +100,20 @@ const onCancel = async (orderId: number) => {
   await cancelOrder(orderId)
   ElMessage.success('订单已取消')
   await loadData()
+}
+
+const onViewAllocation = async (row: any) => {
+  const parts = [
+    `订单号：${row.orderNo || '-'}`,
+    `房间号：${row.roomNo || '待分配'}`,
+    `床位号：${row.bedNo || '待分配'}`,
+    `入住日期：${formatDate(row.checkInDate)}`,
+    `退房日期：${formatDate(row.checkOutDate)}`,
+    `金额：${row.totalAmount ?? '-'}`,
+    `状态：${orderStatusText(row.orderStatus)}`
+  ]
+  if (row.roomName) parts.splice(2, 0, `房间名称：${row.roomName}`)
+  await ElMessageBox.alert(parts.join('<br/>'), '分配信息', { dangerouslyUseHTMLString: true })
 }
 
 onMounted(loadData)
