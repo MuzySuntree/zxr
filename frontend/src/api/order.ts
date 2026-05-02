@@ -9,7 +9,8 @@ export const deleteOrder = (orderId: number) => del<boolean>(`/order/${orderId}`
 export const checkOrderAvailable = (params: {
   checkInDate: string
   checkOutDate: string
-  userGender: number
+  userGender?: number
+  userId?: number
 }) => get<boolean>('/order/check-available', { params })
 
 export const payOrder = (orderId: number) => post<any>(`/order/pay/${orderId}`)
