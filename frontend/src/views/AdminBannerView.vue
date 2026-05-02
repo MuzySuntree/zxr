@@ -53,7 +53,8 @@
           :limit="1"
           :show-file-list="false"
           accept=".jpg,.jpeg,.png,.webp"
-          :before-upload="beforeUpload">
+          :before-upload="beforeUpload"
+          ref="uploadRef">
           <el-button type="primary" :loading="uploading">上传图片</el-button>
         </el-upload>
         <div class="upload-tip">仅支持 jpg/jpeg/png/webp，大小不超过 5MB</div>
@@ -84,7 +85,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadProps, type UploadRequestOptions } from 'element-plus'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadInstance, type UploadProps, type UploadRequestOptions } from 'element-plus'
 import { deleteBanner, listBanners, saveBanner, updateBanner, uploadBannerImage, type BannerItem } from '../api/banner'
 
 const loading = ref(false)
@@ -92,6 +93,7 @@ const banners = ref<BannerItem[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
+const uploadRef = ref<UploadInstance>()
 const uploading = ref(false)
 
 const form = reactive<BannerItem>({
@@ -131,8 +133,10 @@ const doUpload = async (options: UploadRequestOptions) => {
     form.imageUrl = res.data || ''
     ElMessage.success('上传成功')
     formRef.value?.validateField('imageUrl')
+    uploadRef.value?.clearFiles()
   } catch (e: any) {
     ElMessage.error(e?.message || '上传失败')
+    uploadRef.value?.clearFiles()
   } finally {
     uploading.value = false
   }
@@ -140,6 +144,8 @@ const doUpload = async (options: UploadRequestOptions) => {
 
 const removeImage = () => {
   form.imageUrl = ''
+  uploadRef.value?.clearFiles()
+  formRef.value?.validateField('imageUrl')
 }
 
 const loadData = async () => {
@@ -163,12 +169,15 @@ const resetForm = () => {
 }
 
 const openCreateDialog = () => {
+  uploadRef.value?.clearFiles()
   isEdit.value = false
   resetForm()
   dialogVisible.value = true
+  uploadRef.value?.clearFiles()
 }
 
 const openEditDialog = (row: BannerItem) => {
+  uploadRef.value?.clearFiles()
   isEdit.value = true
   form.id = row.id
   form.title = row.title
@@ -178,6 +187,7 @@ const openEditDialog = (row: BannerItem) => {
   form.sortNo = row.sortNo
   form.status = row.status
   dialogVisible.value = true
+  uploadRef.value?.clearFiles()
 }
 
 const onSubmit = async () => {
