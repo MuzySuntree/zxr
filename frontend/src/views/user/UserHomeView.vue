@@ -2,7 +2,7 @@
   <el-card>
     <el-carousel height="420px" indicator-position="outside">
       <el-carousel-item v-for="item in displayBanners" :key="item.id">
-        <img class="banner" :src="item.imageUrl" :alt="item.title" />
+        <img class="banner" :src="item.imageUrl || defaultBannerImage" :alt="item.title" @error="onBannerError" />
         <div class="banner-overlay">
           <h3>{{ item.title }}</h3>
           <p>{{ item.subtitle }}</p>
@@ -66,6 +66,7 @@ const recommendActivities = ref<RecommendActivityItem[]>([])
 const latestMessages = ref<LatestMessageItem[]>([])
 
 const defaultActivityImage = 'https://picsum.photos/400/220?random=10'
+const defaultBannerImage = 'https://picsum.photos/1200/420?random=99'
 const fallbackBanners: HomeBannerItem[] = [
   { id: 1, imageUrl: 'https://picsum.photos/1200/420?random=1', title: '青年旅社欢迎您', subtitle: '城市旅居新体验' },
   { id: 2, imageUrl: 'https://picsum.photos/1200/420?random=2', title: '公共空间', subtitle: '结识更多旅伴' },
@@ -82,6 +83,11 @@ const formatDateTime = (val?: string) => {
 }
 
 const toActivity = () => router.push('/user/booking')
+
+const onBannerError = (event: Event) => {
+  const target = event.target as HTMLImageElement
+  target.src = defaultBannerImage
+}
 
 onMounted(async () => {
   try {

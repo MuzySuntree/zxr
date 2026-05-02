@@ -10,8 +10,19 @@
     <el-table :data="banners" border v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="title" label="标题" min-width="150" />
+      <el-table-column label="图片" width="120">
+        <template #default="scope">
+          <el-image
+            v-if="scope.row.imageUrl"
+            :src="scope.row.imageUrl"
+            fit="cover"
+            class="thumb"
+            :preview-src-list="[scope.row.imageUrl]"
+            preview-teleported />
+          <div v-else class="thumb placeholder">无图</div>
+        </template>
+      </el-table-column>
       <el-table-column prop="subtitle" label="副标题" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="imageUrl" label="图片地址" min-width="220" show-overflow-tooltip />
       <el-table-column prop="linkUrl" label="跳转链接" min-width="200" show-overflow-tooltip />
       <el-table-column prop="sortNo" label="排序" width="90" />
       <el-table-column prop="status" label="状态" width="100">
@@ -36,8 +47,20 @@
       <el-form-item label="副标题">
         <el-input v-model="form.subtitle" maxlength="200" placeholder="请输入副标题" />
       </el-form-item>
-      <el-form-item label="图片地址" prop="imageUrl">
-        <el-input v-model="form.imageUrl" placeholder="请输入图片 URL" />
+      <el-form-item label="轮播图" prop="imageUrl">
+        <el-upload
+          :http-request="doUpload"
+          :limit="1"
+          :show-file-list="false"
+          accept=".jpg,.jpeg,.png,.webp"
+          :before-upload="beforeUpload">
+          <el-button type="primary" :loading="uploading">上传图片</el-button>
+        </el-upload>
+        <div class="upload-tip">仅支持 jpg/jpeg/png/webp，大小不超过 5MB</div>
+        <div v-if="form.imageUrl" class="preview-wrap">
+          <el-image :src="form.imageUrl" fit="cover" class="preview" />
+          <el-button link type="danger" @click="removeImage">删除并重新上传</el-button>
+        </div>
       </el-form-item>
       <el-form-item label="跳转链接">
         <el-input v-model="form.linkUrl" placeholder="请输入跳转链接（选填）" />
@@ -61,14 +84,15 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
-import { deleteBanner, listBanners, saveBanner, updateBanner, type BannerItem } from '../api/banner'
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules, type UploadProps, type UploadRequestOptions } from 'element-plus'
+import { deleteBanner, listBanners, saveBanner, updateBanner, uploadBannerImage, type BannerItem } from '../api/banner'
 
 const loading = ref(false)
 const banners = ref<BannerItem[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<FormInstance>()
+const uploading = ref(false)
 
 const form = reactive<BannerItem>({
   id: undefined,
@@ -82,9 +106,40 @@ const form = reactive<BannerItem>({
 
 const rules: FormRules<BannerItem> = {
   title: [{ required: true, message: '标题不能为空', trigger: 'blur' }],
-  imageUrl: [{ required: true, message: '图片地址不能为空', trigger: 'blur' }],
+  imageUrl: [{ required: true, message: '请上传轮播图图片', trigger: 'change' }],
   sortNo: [{ required: true, message: '排序不能为空', trigger: 'change' }],
   status: [{ required: true, message: '请选择状态', trigger: 'change' }]
+}
+
+const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
+  const allowTypes = ['image/jpeg', 'image/png', 'image/webp']
+  if (!allowTypes.includes(rawFile.type)) {
+    ElMessage.error('仅支持 jpg/jpeg/png/webp 格式图片')
+    return false
+  }
+  if (rawFile.size > 5 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过 5MB')
+    return false
+  }
+  return true
+}
+
+const doUpload = async (options: UploadRequestOptions) => {
+  uploading.value = true
+  try {
+    const res = await uploadBannerImage(options.file as File)
+    form.imageUrl = res.data || ''
+    ElMessage.success('上传成功')
+    formRef.value?.validateField('imageUrl')
+  } catch (e: any) {
+    ElMessage.error(e?.message || '上传失败')
+  } finally {
+    uploading.value = false
+  }
+}
+
+const removeImage = () => {
+  form.imageUrl = ''
 }
 
 const loadData = async () => {
@@ -118,7 +173,7 @@ const openEditDialog = (row: BannerItem) => {
   form.id = row.id
   form.title = row.title
   form.subtitle = row.subtitle || ''
-  form.imageUrl = row.imageUrl
+  form.imageUrl = row.imageUrl || ''
   form.linkUrl = row.linkUrl || ''
   form.sortNo = row.sortNo
   form.status = row.status
@@ -161,4 +216,9 @@ onMounted(loadData)
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; align-items: center; }
 .full-width { width: 100%; }
+.thumb { width: 80px; height: 50px; border-radius: 4px; display: block; }
+.placeholder { background: #f2f3f5; color: #909399; display: flex; align-items: center; justify-content: center; }
+.upload-tip { margin-top: 8px; font-size: 12px; color: #909399; }
+.preview-wrap { margin-top: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.preview { width: 180px; height: 100px; border-radius: 6px; border: 1px solid #ebeef5; }
 </style>
