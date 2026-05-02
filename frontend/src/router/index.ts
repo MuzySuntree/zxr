@@ -13,6 +13,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'dashboard', component: () => import('../views/admin/AdminDashboardView.vue') },
       { path: 'banner', component: () => import('../views/AdminBannerView.vue') },
       { path: 'activity', component: () => import('../views/AdminActivityView.vue') },
+      { path: 'message', component: () => import('../views/AdminMessageBoardView.vue') },
       { path: 'room', component: () => import('../views/RoomView.vue') },
       { path: 'bed', component: () => import('../views/BedView.vue') },
       { path: 'order', component: () => import('../views/OrderView.vue') }
