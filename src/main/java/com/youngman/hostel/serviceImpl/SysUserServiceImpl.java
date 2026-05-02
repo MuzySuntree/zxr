@@ -25,7 +25,7 @@ public class SysUserServiceImpl implements SysUserService {
     private static final int ROLE_NORMAL_USER = 2;
 
     private final SysUserMapper sysUserMapper;
-    private final RegisterVerifyCodeServiceImpl registerVerifyCodeService;
+    private final com.youngman.hostel.service.RegisterVerifyCodeService registerVerifyCodeService;
 
     @Override
     public Long register(UserRegisterDTO dto) {
@@ -165,7 +165,6 @@ public class SysUserServiceImpl implements SysUserService {
                 .set(SysUser::getDeleted, 1)
                 .set(SysUser::getUpdateTime, LocalDateTime.now())) > 0;
     }
-
     
     public SysUser getUserByPhone(String phone) {
         if (isBlank(phone)) {

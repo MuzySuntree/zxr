@@ -1,5 +1,7 @@
 package com.youngman.hostel.service;
 
+import com.youngman.hostel.entity.RegisterVerifyCode;
+
 public interface RegisterVerifyCodeService {
 
     String sendRegisterCode(String phone);
@@ -9,4 +11,6 @@ public interface RegisterVerifyCodeService {
     void verifyCodeForRegister(String phone, String code);
 
     void markCodeUsed(Long id);
+
+    RegisterVerifyCode getLatestUnusedAndUnExpired(String phone);
 }

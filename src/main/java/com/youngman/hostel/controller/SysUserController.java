@@ -14,9 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * 用户接口
- */
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -25,8 +22,8 @@ public class SysUserController {
     private final SysUserService sysUserService;
     private final RegisterVerifyCodeService registerVerifyCodeService;
 
-    /** 发送注册验证码 */
-    @PostMapping("/register-code/send")
+    /** 发送注册验证码（新路径） */
+    @PostMapping("/register/code")
     public ApiResponse<Map<String, Object>> sendRegisterCode(@RequestParam("phone") String phone) {
         try {
             if (sysUserService.getUserByPhone(phone) != null) {
@@ -43,8 +40,14 @@ public class SysUserController {
         }
     }
 
-    /** 校验注册验证码 */
-    @GetMapping("/register-code/check")
+    /** 发送注册验证码（兼容旧路径） */
+    @PostMapping("/register-code/send")
+    public ApiResponse<Map<String, Object>> sendRegisterCodeCompat(@RequestParam("phone") String phone) {
+        return sendRegisterCode(phone);
+    }
+
+    /** 校验注册验证码（新路径） */
+    @GetMapping("/register/code/check")
     public ApiResponse<Boolean> checkRegisterCode(@RequestParam("phone") String phone,
                                                   @RequestParam("code") String code) {
         try {
@@ -54,7 +57,13 @@ public class SysUserController {
         }
     }
 
-    /** 用户注册 */
+    /** 校验注册验证码（兼容旧路径） */
+    @GetMapping("/register-code/check")
+    public ApiResponse<Boolean> checkRegisterCodeCompat(@RequestParam("phone") String phone,
+                                                        @RequestParam("code") String code) {
+        return checkRegisterCode(phone, code);
+    }
+
     @PostMapping("/register")
     public ApiResponse<Long> register(@RequestBody UserRegisterDTO dto) {
         try {
@@ -64,7 +73,6 @@ public class SysUserController {
         }
     }
 
-    /** 用户登录 */
     @PostMapping("/login")
     public ApiResponse<LoginUserVO> login(@RequestBody UserLoginDTO dto) {
         try {
@@ -74,7 +82,6 @@ public class SysUserController {
         }
     }
 
-    /** 根据ID查询用户 */
     @GetMapping("/{id}")
     public ApiResponse<SysUser> getById(@PathVariable("id") Long id) {
         try {
@@ -84,7 +91,6 @@ public class SysUserController {
         }
     }
 
-    /** 查询用户列表 */
     @GetMapping("/list")
     public ApiResponse<List<SysUser>> listUsers() {
         try {
@@ -94,7 +100,6 @@ public class SysUserController {
         }
     }
 
-    /** 更新用户 */
     @PutMapping("/update")
     public ApiResponse<Boolean> updateUser(@RequestBody SysUser user) {
         try {
@@ -104,7 +109,6 @@ public class SysUserController {
         }
     }
 
-    /** 删除用户 */
     @DeleteMapping("/{id}")
     public ApiResponse<Boolean> deleteUser(@PathVariable("id") Long id) {
         try {

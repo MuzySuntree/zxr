@@ -101,7 +101,7 @@ public class RegisterVerifyCodeServiceImpl implements RegisterVerifyCodeService 
                 .orderByDesc(RegisterVerifyCode::getId)
                 .last("limit 1"));
     }
-
+    
     public RegisterVerifyCode getLatestUnusedAndUnExpired(String phone) {
         return registerVerifyCodeMapper.selectOne(new LambdaQueryWrapper<RegisterVerifyCode>()
                 .eq(RegisterVerifyCode::getPhone, phone)
