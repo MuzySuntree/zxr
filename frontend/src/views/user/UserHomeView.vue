@@ -25,7 +25,7 @@
           <p>时间：{{ formatDateTime(item.activityTime) }}</p>
           <p>地点：{{ item.location || '待定' }}</p>
           <p>人数：{{ item.joinedPeople || 0 }} / {{ item.maxPeople || 0 }}</p>
-          <el-button type="primary" size="small" @click="toActivity">查看/报名</el-button>
+          <el-button type="primary" size="small" @click="toActivity(item.id)">查看/报名</el-button>
         </div>
       </el-card>
     </div>
@@ -82,7 +82,7 @@ const formatDateTime = (val?: string) => {
   return val.replace('T', ' ').slice(0, 16)
 }
 
-const toActivity = () => router.push('/user/booking')
+const toActivity = (activityId?: number) => router.push({ path: '/user/activity', query: activityId ? { activityId: String(activityId) } : undefined })
 
 const onBannerError = (event: Event) => {
   const target = event.target as HTMLImageElement
