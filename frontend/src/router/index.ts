@@ -15,6 +15,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'activity', component: () => import('../views/AdminActivityView.vue') },
       { path: 'message', component: () => import('../views/AdminMessageBoardView.vue') },
       { path: 'chat', component: () => import('../views/admin/AdminChatView.vue') },
+      { path: 'user', component: () => import('../views/AdminUserView.vue') },
       { path: 'room', component: () => import('../views/RoomView.vue') },
       { path: 'bed', component: () => import('../views/BedView.vue') },
       { path: 'order', component: () => import('../views/OrderView.vue') }
