@@ -13,6 +13,7 @@
         <el-menu-item index="/admin/banner">轮播图管理</el-menu-item>
         <el-menu-item index="/admin/activity">活动管理</el-menu-item>
         <el-menu-item index="/admin/message">留言审核</el-menu-item>
+        <el-menu-item index="/admin/chat">客服会话</el-menu-item>
         <el-menu-item index="/admin/room">房间管理</el-menu-item>
         <el-menu-item index="/admin/bed">床位管理</el-menu-item>
         <el-menu-item index="/admin/order">订单管理</el-menu-item>

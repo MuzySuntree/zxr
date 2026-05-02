@@ -21,6 +21,10 @@ export interface ChatMessage {
 
 export const openChatSession = (userId: number) => post<ChatSession>(`/chat/session/open?userId=${userId}`)
 export const listUserChatSessions = (userId: number) => get<ChatSession[]>(`/chat/session/user/${userId}`)
+export const listAllChatSessions = () => get<ChatSession[]>('/chat/session/list')
+export const assignChatSession = (sessionId: number, adminId: number) => put<boolean>(`/chat/session/assign?sessionId=${sessionId}&adminId=${adminId}`)
+export const closeChatSession = (sessionId: number) => put<boolean>(`/chat/session/close/${sessionId}`)
+
 export const sendChatMessage = (data: { sessionId: number; senderId: number; senderRole: 1 | 2; content: string }) =>
   post<boolean>('/chat/message/send', data)
 export const listChatMessages = (sessionId: number) => get<ChatMessage[]>(`/chat/message/list?sessionId=${sessionId}`)
