@@ -78,8 +78,12 @@ public class BookingOrderController {
     public ApiResponse<Boolean> checkAvailableBeds(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkInDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkOutDate,
-            @RequestParam Integer userGender) {
+            @RequestParam(required = false) Integer userGender,
+            @RequestParam(required = false) Long userId) {
         try {
+            if (userId != null) {
+                return ApiResponse.success(bookingOrderService.hasAvailableBedsByUserId(checkInDate, checkOutDate, userId));
+            }
             return ApiResponse.success(bookingOrderService.hasAvailableBeds(checkInDate, checkOutDate, userGender));
         } catch (Exception e) {
             return ApiResponse.fail(e.getMessage());
