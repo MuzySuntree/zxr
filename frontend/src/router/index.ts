@@ -11,6 +11,11 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', redirect: '/admin/dashboard' },
       { path: 'dashboard', component: () => import('../views/admin/AdminDashboardView.vue') },
+      { path: 'banner', component: () => import('../views/AdminBannerView.vue') },
+      { path: 'activity', component: () => import('../views/AdminActivityView.vue') },
+      { path: 'message', component: () => import('../views/AdminMessageBoardView.vue') },
+      { path: 'chat', component: () => import('../views/admin/AdminChatView.vue') },
+      { path: 'user', component: () => import('../views/AdminUserView.vue') },
       { path: 'room', component: () => import('../views/RoomView.vue') },
       { path: 'bed', component: () => import('../views/BedView.vue') },
       { path: 'order', component: () => import('../views/OrderView.vue') }
@@ -23,8 +28,12 @@ const routes: RouteRecordRaw[] = [
       { path: '', redirect: '/user/home' },
       { path: 'home', component: () => import('../views/user/UserHomeView.vue') },
       { path: 'booking', component: () => import('../views/user/UserBookingView.vue') },
+      { path: 'activity', component: () => import('../views/user/UserActivityView.vue') },
       { path: 'order', component: () => import('../views/user/UserOrderView.vue') },
       { path: 'notice', component: () => import('../views/user/UserNoticeView.vue') },
+      { path: 'message', component: () => import('../views/user/UserMessageBoardView.vue') },
+      { path: 'chat', component: () => import('../views/user/UserChatView.vue') },
+      { path: 'payment', component: () => import('../views/user/UserPaymentView.vue') },
       { path: 'profile', component: () => import('../views/user/UserProfileView.vue') }
     ]
   }

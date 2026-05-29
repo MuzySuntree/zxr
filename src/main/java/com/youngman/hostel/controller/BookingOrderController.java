@@ -78,8 +78,12 @@ public class BookingOrderController {
     public ApiResponse<Boolean> checkAvailableBeds(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkInDate,
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate checkOutDate,
-            @RequestParam Integer userGender) {
+            @RequestParam(required = false) Integer userGender,
+            @RequestParam(required = false) Long userId) {
         try {
+            if (userId != null) {
+                return ApiResponse.success(bookingOrderService.hasAvailableBedsByUserId(checkInDate, checkOutDate, userId));
+            }
             return ApiResponse.success(bookingOrderService.hasAvailableBeds(checkInDate, checkOutDate, userGender));
         } catch (Exception e) {
             return ApiResponse.fail(e.getMessage());
@@ -91,9 +95,10 @@ public class BookingOrderController {
      * 说明：当前 serviceImpl 中 simulatePay 已内含“支付后自动分配床位”的流程触发。
      */
     @PostMapping("/pay/{orderId}")
-    public ApiResponse<PaymentResultVO> simulatePay(@PathVariable Long orderId) {
+    public ApiResponse<PaymentResultVO> simulatePay(@PathVariable Long orderId,
+                                                  @RequestParam(required = false) Integer payType) {
         try {
-            return ApiResponse.success(bookingOrderService.simulatePay(orderId));
+            return ApiResponse.success(bookingOrderService.simulatePay(orderId, payType));
         } catch (Exception e) {
             return ApiResponse.fail(e.getMessage());
         }

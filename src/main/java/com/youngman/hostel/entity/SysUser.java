@@ -34,6 +34,24 @@ public class SysUser {
     /** 手机号 */
     private String phone;
 
+    /** 头像URL */
+    private String avatar;
+
+    /** 邮箱 */
+    private String email;
+
+    /** 身份证号 */
+    private String idCard;
+
+    /** 紧急联系人 */
+    private String emergencyContact;
+
+    /** 紧急联系人手机号 */
+    private String emergencyPhone;
+
+    /** 备注 */
+    private String remark;
+
     /** 角色：1-管理员，2-普通用户 */
     private Integer role;
 

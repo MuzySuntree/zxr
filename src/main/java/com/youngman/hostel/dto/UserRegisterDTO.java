@@ -11,18 +11,21 @@ public class UserRegisterDTO {
     /** 用户名 */
     private String username;
 
-    /** 明文密码（serviceImpl 中应转加密后保存） */
+    /** 明文密码（毕设演示场景可明文存储） */
     private String password;
+
+    /** 确认密码 */
+    private String confirmPassword;
 
     /** 真实姓名 */
     private String realName;
 
-    /** 性别：1-男，2-女，0-未知 */
+    /** 性别：1-男，2-女 */
     private Integer gender;
 
     /** 手机号 */
     private String phone;
 
-    /** 角色：默认普通用户2；管理员可由后台指定1 */
-    private Integer role;
+    /** 注册验证码 */
+    private String verifyCode;
 }
