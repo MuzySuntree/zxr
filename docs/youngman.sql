@@ -213,3 +213,183 @@ INSERT INTO `sys_user` (`id`, `username`, `password`, `real_name`, `gender`, `ph
 /*!40101 SET SQL_MODE=IFNULL(@OLD_SQL_MODE, '') */;
 /*!40014 SET FOREIGN_KEY_CHECKS=IF(@OLD_FOREIGN_KEY_CHECKS IS NULL, 1, @OLD_FOREIGN_KEY_CHECKS) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+
+-- ========================
+-- 2026-05-02 数据库结构扩展
+-- ========================
+
+-- 1) 用户注册信息增强（保留既有字段，不破坏旧结构）
+ALTER TABLE `sys_user`
+  ADD COLUMN `avatar` varchar(500) DEFAULT NULL COMMENT '头像URL' AFTER `phone`,
+  ADD COLUMN `email` varchar(100) DEFAULT NULL COMMENT '邮箱' AFTER `avatar`,
+  ADD COLUMN `id_card` varchar(30) DEFAULT NULL COMMENT '身份证号' AFTER `email`,
+  ADD COLUMN `emergency_contact` varchar(50) DEFAULT NULL COMMENT '紧急联系人' AFTER `id_card`,
+  ADD COLUMN `emergency_phone` varchar(20) DEFAULT NULL COMMENT '紧急联系人手机号' AFTER `emergency_contact`,
+  ADD COLUMN `remark` varchar(500) DEFAULT NULL COMMENT '个人备注' AFTER `emergency_phone`;
+
+ALTER TABLE `sys_user`
+  ADD UNIQUE KEY `uk_sys_user_email` (`email`),
+  ADD KEY `idx_sys_user_id_card` (`id_card`),
+  ADD KEY `idx_sys_user_emergency_phone` (`emergency_phone`);
+
+-- 2) 注册验证码表
+CREATE TABLE IF NOT EXISTS `register_verify_code` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `phone` varchar(20) NOT NULL COMMENT '手机号',
+  `code` varchar(10) NOT NULL COMMENT '验证码',
+  `expire_time` datetime NOT NULL COMMENT '过期时间',
+  `used` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否已使用：0-否，1-是',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_register_verify_code_phone` (`phone`),
+  KEY `idx_register_verify_code_expire_time` (`expire_time`),
+  KEY `idx_register_verify_code_used` (`used`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='注册验证码表';
+
+-- 3) 用户支付设置表
+CREATE TABLE IF NOT EXISTS `user_payment_setting` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '用户ID',
+  `pay_type` tinyint(4) NOT NULL COMMENT '支付类型：1-余额模拟支付，2-微信模拟支付，3-支付宝模拟支付',
+  `balance` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '支付余额（用于余额模拟支付）',
+  `is_default` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否默认：0-否，1-是',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '状态：1-启用，0-禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_payment_setting_user_id` (`user_id`),
+  KEY `idx_user_payment_setting_pay_type` (`pay_type`),
+  KEY `idx_user_payment_setting_status` (`status`),
+  KEY `idx_user_payment_setting_default` (`is_default`),
+  UNIQUE KEY `uk_user_payment_setting_user_pay_type` (`user_id`,`pay_type`),
+  CONSTRAINT `fk_user_payment_setting_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户支付设置表';
+
+-- 4) 首页轮播图表
+CREATE TABLE IF NOT EXISTS `home_banner` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `title` varchar(100) NOT NULL COMMENT '主标题',
+  `subtitle` varchar(255) DEFAULT NULL COMMENT '副标题',
+  `image_url` varchar(500) NOT NULL COMMENT '图片URL（酒店外观/大堂/公共区域等）',
+  `link_url` varchar(500) DEFAULT NULL COMMENT '跳转链接',
+  `sort_no` int(11) NOT NULL DEFAULT '0' COMMENT '排序号（值越小越靠前）',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '状态：1-启用，0-禁用',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_home_banner_status` (`status`),
+  KEY `idx_home_banner_sort_no` (`sort_no`),
+  KEY `idx_home_banner_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='首页轮播图表';
+
+-- 5) 留言板表
+CREATE TABLE IF NOT EXISTS `message_board` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '发布用户ID',
+  `category` tinyint(4) NOT NULL COMMENT '分类：1-失物招领，2-寻找搭子，3-入住交流，4-建议反馈，9-其他',
+  `title` varchar(200) NOT NULL COMMENT '标题',
+  `content` varchar(4000) NOT NULL COMMENT '正文内容',
+  `contact_info` varchar(200) DEFAULT NULL COMMENT '联系方式',
+  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '状态：0-待审核，1-已发布，2-已下架',
+  `view_count` int(11) NOT NULL DEFAULT '0' COMMENT '浏览次数',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_message_board_user_id` (`user_id`),
+  KEY `idx_message_board_category` (`category`),
+  KEY `idx_message_board_status` (`status`),
+  KEY `idx_message_board_create_time` (`create_time`),
+  KEY `idx_message_board_deleted` (`deleted`),
+  CONSTRAINT `fk_message_board_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='留言板表';
+
+-- 6) 活动管理表
+CREATE TABLE IF NOT EXISTS `hostel_activity` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `title` varchar(200) NOT NULL COMMENT '活动标题',
+  `cover_image` varchar(500) DEFAULT NULL COMMENT '封面图URL',
+  `description` varchar(4000) DEFAULT NULL COMMENT '活动描述',
+  `activity_time` datetime NOT NULL COMMENT '活动时间',
+  `location` varchar(255) NOT NULL COMMENT '活动地点',
+  `max_people` int(11) NOT NULL DEFAULT '0' COMMENT '活动人数上限',
+  `joined_people` int(11) NOT NULL DEFAULT '0' COMMENT '已报名人数',
+  `status` tinyint(4) NOT NULL DEFAULT '0' COMMENT '状态：0-未发布，1-报名中，2-已结束，3-已取消',
+  `recommend` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否推荐：0-否，1-是',
+  `sort_no` int(11) NOT NULL DEFAULT '0' COMMENT '排序号',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint(4) NOT NULL DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_hostel_activity_status` (`status`),
+  KEY `idx_hostel_activity_recommend` (`recommend`),
+  KEY `idx_hostel_activity_activity_time` (`activity_time`),
+  KEY `idx_hostel_activity_sort_no` (`sort_no`),
+  KEY `idx_hostel_activity_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='青旅活动表';
+
+-- 7) 活动报名表
+CREATE TABLE IF NOT EXISTS `hostel_activity_signup` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `activity_id` bigint(20) unsigned NOT NULL COMMENT '活动ID',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '报名用户ID',
+  `signup_status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '报名状态：1-已报名，2-已取消',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_activity_signup_activity_user` (`activity_id`,`user_id`),
+  KEY `idx_activity_signup_user_id` (`user_id`),
+  KEY `idx_activity_signup_status` (`signup_status`),
+  CONSTRAINT `fk_activity_signup_activity_id` FOREIGN KEY (`activity_id`) REFERENCES `hostel_activity` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_activity_signup_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='活动报名表';
+
+-- 8) 客服会话表（轮询版）
+CREATE TABLE IF NOT EXISTS `customer_chat_session` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `user_id` bigint(20) unsigned NOT NULL COMMENT '用户ID',
+  `admin_id` bigint(20) unsigned DEFAULT NULL COMMENT '客服管理员ID',
+  `status` tinyint(4) NOT NULL DEFAULT '1' COMMENT '会话状态：1-进行中，2-已结束',
+  `last_message` varchar(2000) DEFAULT NULL COMMENT '最后一条消息内容',
+  `last_message_time` datetime DEFAULT NULL COMMENT '最后消息时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_customer_chat_session_user_id` (`user_id`),
+  KEY `idx_customer_chat_session_admin_id` (`admin_id`),
+  KEY `idx_customer_chat_session_status` (`status`),
+  KEY `idx_customer_chat_session_last_message_time` (`last_message_time`),
+  CONSTRAINT `fk_customer_chat_session_user_id` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_customer_chat_session_admin_id` FOREIGN KEY (`admin_id`) REFERENCES `sys_user` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客服会话表';
+
+-- 8) 客服消息表（轮询版）
+CREATE TABLE IF NOT EXISTS `customer_chat_message` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `session_id` bigint(20) unsigned NOT NULL COMMENT '会话ID',
+  `sender_id` bigint(20) unsigned NOT NULL COMMENT '发送者ID',
+  `sender_role` tinyint(4) NOT NULL COMMENT '发送者角色：1-用户，2-管理员',
+  `content` varchar(4000) NOT NULL COMMENT '消息内容',
+  `is_read` tinyint(4) NOT NULL DEFAULT '0' COMMENT '是否已读：0-未读，1-已读',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_customer_chat_message_session_id` (`session_id`),
+  KEY `idx_customer_chat_message_sender_id` (`sender_id`),
+  KEY `idx_customer_chat_message_is_read` (`is_read`),
+  KEY `idx_customer_chat_message_create_time` (`create_time`),
+  CONSTRAINT `fk_customer_chat_message_session_id` FOREIGN KEY (`session_id`) REFERENCES `customer_chat_session` (`id`) ON UPDATE CASCADE,
+  CONSTRAINT `fk_customer_chat_message_sender_id` FOREIGN KEY (`sender_id`) REFERENCES `sys_user` (`id`) ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='客服消息表';
+
+-- 初始化数据：首页轮播图
+INSERT INTO `home_banner` (`title`, `subtitle`, `image_url`, `link_url`, `sort_no`, `status`, `create_time`, `update_time`, `deleted`) VALUES
+('城市青年旅社外观', '地铁步行5分钟，交通便利', 'https://cdn.youngman.example/banner/hostel-exterior.jpg', '/user/home', 1, 1, NOW(), NOW(), 0),
+('大堂公共休息区', '24小时自助前台与咖啡吧', 'https://cdn.youngman.example/banner/lobby.jpg', '/user/home', 2, 1, NOW(), NOW(), 0),
+('共享厨房与活动区', '开放式厨房、桌游与社交空间', 'https://cdn.youngman.example/banner/public-area.jpg', '/user/home', 3, 1, NOW(), NOW(), 0);
+
+-- 初始化数据：活动信息
+INSERT INTO `hostel_activity` (`title`, `cover_image`, `description`, `activity_time`, `location`, `max_people`, `joined_people`, `status`, `recommend`, `sort_no`, `create_time`, `update_time`, `deleted`) VALUES
+('周五城市夜骑', 'https://cdn.youngman.example/activity/night-ride.jpg', '由青旅志愿者带队，沿江夜骑约12公里，适合新入住旅客快速熟悉城市。', DATE_ADD(CURDATE(), INTERVAL 5 DAY) + INTERVAL 19 HOUR, '青旅门口集合', 20, 0, 1, 1, 1, NOW(), NOW(), 0),
+('周末桌游社交局', 'https://cdn.youngman.example/activity/boardgame.jpg', '在公共活动区开展桌游交流，欢迎单人报名，现场随机组队。', DATE_ADD(CURDATE(), INTERVAL 7 DAY) + INTERVAL 15 HOUR, '一楼公共活动区', 16, 0, 1, 0, 2, NOW(), NOW(), 0);
